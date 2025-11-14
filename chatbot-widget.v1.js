@@ -56,6 +56,7 @@
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
+      /* 💬 BURBUJA */
       .cbw-bubble {
         width: 56px;
         height: 56px;
@@ -75,11 +76,14 @@
         font-size: 26px;
       }
 
+      /* 🪟 VENTANA DEL CHAT — ahora se abre hacia la IZQUIERDA */
       .cbw-window {
         position: absolute;
         bottom: 76px;
-        width: 340px;
+        width: 360px;
         max-height: 520px;
+        max-width: calc(100vw - 60px);
+
         background: var(--chat-bg);
         color: var(--chat-foreground);
         border-radius: 16px;
@@ -88,10 +92,14 @@
         flex-direction: column;
         overflow: hidden;
         border: 1px solid rgba(148, 163, 184, 0.35);
+
+        right: 0;   /* <<--- ESTA LÍNEA HACE QUE SE ABRA HACIA LA IZQUIERDA */
+        left: auto;
       }
 
+      /* HEADER */
       .cbw-header {
-        padding: 10px 14px;
+        padding: 12px 16px;
         background: linear-gradient(135deg, var(--chat-accent), #059669);
         color: var(--chat-accent-foreground);
         display: flex;
@@ -100,7 +108,7 @@
       }
 
       .cbw-header-title {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
       }
 
@@ -120,27 +128,30 @@
         border: none;
         color: inherit;
         cursor: pointer;
-        font-size: 18px;
+        font-size: 22px;
         padding: 4px;
       }
 
+      /* 🌤 MENSAJES con fondo nube */
       .cbw-messages {
-        padding: 10px 12px;
+        padding: 12px 14px;
         flex: 1;
         overflow-y: auto;
         background: radial-gradient(circle at top, #f4f4f5, #e5e7eb);
       }
 
+      /* 💬 Estilo general de burbuja */
       .cbw-message {
         max-width: 85%;
         margin-bottom: 8px;
-        padding: 8px 10px;
-        border-radius: 12px;
-        font-size: 13px;
-        line-height: 1.4;
+        padding: 10px 12px;
+        border-radius: 14px;
+        font-size: 14px;
+        line-height: 1.45;
         white-space: pre-wrap;
       }
 
+      /* 🟢 Mensaje del USUARIO */
       .cbw-message-user {
         margin-left: auto;
         background: var(--chat-accent);
@@ -148,16 +159,20 @@
         border-bottom-right-radius: 2px;
       }
 
+      /* ⚪ Mensaje del BOT – estilo “bubble” */
       .cbw-message-bot {
         margin-right: auto;
-        background: rgba(15, 23, 42, 0.9);
-        color: #f9fafb;
-        border-bottom-left-radius: 2px;
+        background: #ffffff;
+        color: #374151;
+        border-radius: 14px;
+        border: 1px solid #e5e7eb;
+        border-bottom-left-radius: 4px;
       }
 
+      /* FOOTER */
       .cbw-footer {
-        padding: 8px;
-        background: #f9fafb;
+        padding: 10px;
+        background: #fafafa;
         border-top: 1px solid #e5e7eb;
       }
 
@@ -167,11 +182,12 @@
         align-items: flex-end;
       }
 
+      /* ✏️ INPUT */
       .cbw-input {
         flex: 1;
         border-radius: 9999px;
         border: 1px solid #d1d5db;
-        padding: 8px 10px;
+        padding: 10px 14px;
         font-size: var(--chat-input-font-size);
         resize: none;
         max-height: 80px;
@@ -179,21 +195,22 @@
       }
 
       .cbw-input:focus {
-        border-color: #10b981;
+        border-color: var(--chat-accent);
         box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4);
       }
 
+      /* 📤 BOTÓN DE ENVIAR */
       .cbw-send-btn {
         border-radius: 9999px;
         border: none;
         background: var(--chat-accent);
         color: var(--chat-accent-foreground);
-        padding: 8px 10px;
+        padding: 8px 12px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 14px;
         min-width: 40px;
       }
 
@@ -206,6 +223,7 @@
         margin-left: 4px;
       }
 
+      /* ⚡ Powered by */
       .cbw-powered {
         margin-top: 4px;
         font-size: 10px;
@@ -213,7 +231,7 @@
         color: #9ca3af;
       }
 
-      /* Posiciones */
+      /* 📍 Posiciones */
       .cbw-pos-bottom-right {
         right: 20px;
         bottom: 20px;
@@ -230,6 +248,7 @@
         left: 20px;
         top: 20px;
       }
+
     `;
     document.head.appendChild(style);
   }
