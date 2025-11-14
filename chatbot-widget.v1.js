@@ -366,13 +366,14 @@
 
     const data = await res.json().catch(() => ({}));
 
-    return (
-      data.answer ||
-      data.output ||
-      data.message ||
-      data.text ||
-      JSON.stringify(data)
-    );
+      // Toda respuesta viene de n8n y siempre es un array
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0].output || "Sin respuesta válida del backend.";
+    }
+
+    // Si por alguna razón no vino array, fallback
+    return data.output || data.message || "Sin respuesta.";
+
   }
 
   function init() {
