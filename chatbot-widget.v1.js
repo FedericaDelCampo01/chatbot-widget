@@ -1,14 +1,11 @@
 (function () {
-  // Evitar doble carga
   if (window.__CHATBOT_WIDGET_LOADED__) return;
   window.__CHATBOT_WIDGET_LOADED__ = true;
 
   const CONFIG = window.__CHATBOT_WIDGET_CONFIG || {};
 
   if (!CONFIG.backendUrl || !CONFIG.siteId) {
-    console.warn(
-      "[Chatbot Widget] Falta backendUrl o siteId en window.__CHATBOT_WIDGET_CONFIG"
-    );
+    console.warn("[Chatbot Widget] Falta backendUrl o siteId en window.__CHATBOT_WIDGET_CONFIG");
     return;
   }
 
@@ -17,7 +14,6 @@
     CONFIG.welcomeMessage || "¡Hola! ¿En qué puedo ayudarte hoy?";
   const theme = CONFIG.theme || {};
 
-  // Estado interno
   let isOpen = false;
   let container;
   let bubbleButton;
@@ -27,39 +23,35 @@
   let sendButton;
   let isSending = false;
 
-  // Utilidad: aplicar tema
   function applyTheme(root) {
     const vars = {
       "--chat-accent": "#10b981",
       "--chat-accent-foreground": "#ffffff",
       "--chat-bg": "#ffffff",
       "--chat-foreground": "#0f172a",
-      "--chat-radius": "12px",
-      "--chat-input-font-size": "14px",
+      "--chat-radius": "16px",
+      "--chat-input-font-size": "15px",
       ...theme,
     };
 
-    Object.entries(vars).forEach(([key, value]) => {
-      if (!value) return;
-      root.style.setProperty(key, value);
+    Object.entries(vars).forEach(([k, v]) => {
+      root.style.setProperty(k, v);
     });
   }
 
-  // Inyectar estilos CSS
   function injectStyles() {
     const style = document.createElement("style");
     style.setAttribute("data-chatbot-widget", "true");
     style.textContent = `
-     .cbw-container {
+      .cbw-container {
         position: fixed;
         z-index: 999999;
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: system-ui, sans-serif;
       }
 
-      /* 💬 BURBUJA */
       .cbw-bubble {
-        width: 58px;
-        height: 58px;
+        width: 60px;
+        height: 60px;
         border-radius: 9999px;
         background: var(--chat-accent);
         color: var(--chat-accent-foreground);
@@ -69,111 +61,89 @@
         cursor: pointer;
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
         border: none;
-        outline: none;
       }
 
       .cbw-bubble-icon {
-        font-size: 28px;
+        font-size: 30px;
       }
 
-      /* 🪟 VENTANA DEL CHAT — abre hacia la IZQUIERDA */
       .cbw-window {
         position: absolute;
-        bottom: 78px;
-        width: 380px;
-        max-height: 540px;
-        max-width: calc(100vw - 60px);
-
+        bottom: 80px;
+        width: 350px;
+        max-height: 520px;
         background: var(--chat-bg);
         color: var(--chat-foreground);
-        border-radius: 16px;
-        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+        border-radius: 20px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-
-        right: 0;
-        left: auto;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        animation: cbw-pop 0.2s ease-out;
       }
 
-      /* HEADER */
+      @keyframes cbw-pop {
+        from { opacity:0; transform:scale(0.9) }
+        to { opacity:1; transform:scale(1) }
+      }
+
       .cbw-header {
-        padding: 12px 18px;
-        background: linear-gradient(135deg, var(--chat-accent), #059669);
+        padding: 12px 16px;
+        background: var(--chat-accent);
         color: var(--chat-accent-foreground);
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
 
-      /* 💚 TÍTULO – más grande */
       .cbw-header-title {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
-        letter-spacing: -0.3px;
-      }
-
-      /* 🗑 Sacamos subtítulo */
-      .cbw-header-subtitle {
-        display: none !important;
-      }
-
-      .cbw-header-left {
-        display: flex;
-        flex-direction: column;
-        gap: 0px;
       }
 
       .cbw-header-close {
         background: transparent;
         border: none;
-        color: inherit;
+        color: white;
+        font-size: 22px;
         cursor: pointer;
-        font-size: 24px;
-        padding: 4px;
       }
 
-      /* 🌤 MENSAJES */
       .cbw-messages {
-        padding: 14px 16px;
+        padding: 14px;
         flex: 1;
         overflow-y: auto;
         background: radial-gradient(circle at top, #f4f4f5, #e5e7eb);
       }
 
-      /* 💬 BURBUJA GENÉRICA */
       .cbw-message {
         max-width: 85%;
+        padding: 10px 14px;
         margin-bottom: 10px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        font-size: 15px; /* Aumentamos font */
-        line-height: 1.55;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.45;
         white-space: pre-wrap;
       }
 
-      /* 🧑‍🦰 USUARIO */
       .cbw-message-user {
         margin-left: auto;
         background: var(--chat-accent);
-        color: var(--chat-accent-foreground);
+        color: white;
         border-bottom-right-radius: 4px;
       }
 
-      /* 🤖 BOT – modo bubble */
       .cbw-message-bot {
         margin-right: auto;
-        background: #ffffff;
-        color: #374151;
-        border-radius: 14px;
-        border: 1px solid #e5e7eb;
+        background: white;
+        color: #0f172a;
+        border: 1px solid rgba(0,0,0,0.08);
         border-bottom-left-radius: 4px;
       }
 
-      /* FOOTER */
       .cbw-footer {
-        padding: 12px;
+        padding: 10px;
         background: #fafafa;
         border-top: 1px solid #e5e7eb;
       }
@@ -181,148 +151,75 @@
       .cbw-input-wrapper {
         display: flex;
         gap: 8px;
-        align-items: flex-end;
+        align-items: center;
       }
 
-      /* ✏️ INPUT */
       .cbw-input {
         flex: 1;
-        border-radius: 9999px;
+        border-radius: 20px;
         border: 1px solid #d1d5db;
-        padding: 12px 16px;
-        font-size: 15px; /* Más grande */
-        resize: none;
-        max-height: 90px;
-        outline: none;
+        padding: 10px 14px;
+        font-size: var(--chat-input-font-size);
       }
 
-      .cbw-input:focus {
-        border-color: var(--chat-accent);
-        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4);
-      }
-
-      /* 📤 BOTÓN DE ENVIAR — solo icono */
       .cbw-send-btn {
-        border-radius: 9999px;
-        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
         background: var(--chat-accent);
-        color: var(--chat-accent-foreground);
-        padding: 12px 14px; /* Más grande + redondo */
+        color: white;
+        border: none;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px; /* Ícono grande */
-        min-width: 48px;
-        height: 48px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size: 18px;
       }
 
-      .cbw-send-btn:disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
-
-      .cbw-send-icon {
-        margin-left: 0px !important;
-        font-size: 20px;
-      }
-
-      /* ⚡ Powered */
-      .cbw-powered {
-        margin-top: 4px;
-        font-size: 10px;
-        text-align: right;
-        color: #9ca3af;
-      }
-
-      /* 📍 Posiciones */
-      .cbw-pos-bottom-right {
-        right: 20px;
-        bottom: 20px;
-      }
-      .cbw-pos-bottom-left {
-        left: 20px;
-        bottom: 20px;
-      }
-      .cbw-pos-top-right {
-        right: 20px;
-        top: 20px;
-      }
-      .cbw-pos-top-left {
-        left: 20px;
-        top: 20px;
-      }
+      .cbw-pos-bottom-right { right: 20px; bottom: 20px; }
+      .cbw-pos-bottom-left { left: 20px; bottom: 20px; }
+      .cbw-pos-top-right { right: 20px; top: 20px; }
+      .cbw-pos-top-left { left: 20px; top: 20px; }
     `;
     document.head.appendChild(style);
   }
 
   function getPositionClass() {
     switch (position) {
-      case "bottom-left":
-        return "cbw-pos-bottom-left";
-      case "top-right":
-        return "cbw-pos-top-right";
-      case "top-left":
-        return "cbw-pos-top-left";
-      case "bottom-right":
-      default:
-        return "cbw-pos-bottom-right";
+      case "bottom-left": return "cbw-pos-bottom-left";
+      case "top-right": return "cbw-pos-top-right";
+      case "top-left": return "cbw-pos-top-left";
+      default: return "cbw-pos-bottom-right";
     }
   }
 
-  // Crear estructura del widget
   function createWidget() {
     container = document.createElement("div");
     container.className = `cbw-container ${getPositionClass()}`;
 
-    // Burbuja
     bubbleButton = document.createElement("button");
     bubbleButton.className = "cbw-bubble";
-    bubbleButton.setAttribute("aria-label", "Abrir chatbot");
-    const bubbleIcon = document.createElement("div");
-    bubbleIcon.className = "cbw-bubble-icon";
-    bubbleIcon.textContent = "💬";
-    bubbleButton.appendChild(bubbleIcon);
+    bubbleButton.innerHTML = `<div class="cbw-bubble-icon">💬</div>`;
 
-    // Ventana
     chatWindow = document.createElement("div");
     chatWindow.className = "cbw-window";
     chatWindow.style.display = "none";
 
-    // Header
     const header = document.createElement("div");
     header.className = "cbw-header";
+    header.innerHTML = `
+      <div class="cbw-header-title">Asistente virtual</div>
+      <button class="cbw-header-close">&times;</button>
+    `;
 
-    const headerLeft = document.createElement("div");
-    headerLeft.className = "cbw-header-left";
-    const title = document.createElement("div");
-    title.className = "cbw-header-title";
-    title.textContent = "Asistente virtual";
-
-    const subtitle = document.createElement("div");
-    subtitle.className = "cbw-header-subtitle";
-    subtitle.textContent = "Responde sobre tu sitio en tiempo real";
-
-    headerLeft.appendChild(title);
-    headerLeft.appendChild(subtitle);
-
-    const closeBtn = document.createElement("button");
-    closeBtn.className = "cbw-header-close";
-    closeBtn.innerHTML = "&times;";
-
-    header.appendChild(headerLeft);
-    header.appendChild(closeBtn);
-
-    // Zona de mensajes
     messagesContainer = document.createElement("div");
     messagesContainer.className = "cbw-messages";
 
-    // Footer
     const footer = document.createElement("div");
     footer.className = "cbw-footer";
 
-    const inputWrapper = document.createElement("div");
-    inputWrapper.className = "cbw-input-wrapper";
+    const wrapper = document.createElement("div");
+    wrapper.className = "cbw-input-wrapper";
 
     inputField = document.createElement("textarea");
     inputField.className = "cbw-input";
@@ -331,91 +228,52 @@
 
     sendButton = document.createElement("button");
     sendButton.className = "cbw-send-btn";
-    sendButton.innerHTML = `<span class="cbw-send-icon">➤</span>`;
+    sendButton.innerHTML = "➤";
 
-    inputWrapper.appendChild(inputField);
-    inputWrapper.appendChild(sendButton);
+    wrapper.appendChild(inputField);
+    wrapper.appendChild(sendButton);
+    footer.appendChild(wrapper);
 
-    const powered = document.createElement("div");
-    powered.className = "cbw-powered";
-    powered.textContent = "Chatbot by TuEmpresa";
-
-    footer.appendChild(inputWrapper);
-    footer.appendChild(powered);
-
-    // Armar ventana
     chatWindow.appendChild(header);
     chatWindow.appendChild(messagesContainer);
     chatWindow.appendChild(footer);
 
-    // Agregar todo
     container.appendChild(chatWindow);
     container.appendChild(bubbleButton);
 
     document.body.appendChild(container);
 
-    // Tema
     applyTheme(container);
 
-    // Eventos
-    bubbleButton.addEventListener("click", toggle);
-    closeBtn.addEventListener("click", close);
-    sendButton.addEventListener("click", handleSend);
+    bubbleButton.onclick = toggle;
+    header.querySelector(".cbw-header-close").onclick = close;
+    sendButton.onclick = handleSend;
 
-    inputField.addEventListener("keydown", function (e) {
+    inputField.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
     });
 
-    // Mensaje de bienvenida
     addBotMessage(welcomeMessage);
   }
 
   function addMessage(text, from) {
-    const msg = document.createElement("div");
-    msg.className =
+    const div = document.createElement("div");
+    div.className =
       "cbw-message " + (from === "user" ? "cbw-message-user" : "cbw-message-bot");
-    msg.textContent = text;
-    messagesContainer.appendChild(msg);
+    div.textContent = text;
+    messagesContainer.appendChild(div);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  function addUserMessage(text) {
-    addMessage(text, "user");
-  }
+  function addUserMessage(t) { addMessage(t, "user"); }
+  function addBotMessage(t) { addMessage(t, "bot"); }
 
-  function addBotMessage(text) {
-    addMessage(text, "bot");
-  }
-
-  function setSendingState(sending) {
-    isSending = sending;
-    sendButton.disabled = sending;
-    sendButton.style.opacity = sending ? "0.7" : "1";
-  }
-
-  function handleSend() {
-    if (isSending) return;
-    const value = inputField.value.trim();
-    if (!value) return;
-
-    addUserMessage(value);
-    inputField.value = "";
-    setSendingState(true);
-
-    sendMessageToBackend(value)
-      .then((answer) => {
-        addBotMessage(answer || "No pude procesar tu pregunta en este momento.");
-      })
-      .catch((err) => {
-        console.error("[Chatbot Widget] Error al enviar mensaje:", err);
-        addBotMessage("Ocurrió un error al conectar con el asistente.");
-      })
-      .finally(() => {
-        setSendingState(false);
-      });
+  function setSendingState(s) {
+    isSending = s;
+    sendButton.disabled = s;
   }
 
   async function sendMessageToBackend(message) {
@@ -429,55 +287,54 @@
 
     const res = await fetch(CONFIG.backendUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Chatbot-Widget": "v1",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) {
-      throw new Error("Respuesta HTTP no OK: " + res.status);
-    }
+    let data = await res.json().catch(() => ({}));
 
-    const data = await res.json().catch(() => ({}));
-    // Ajustá esta clave según tu n8n (por ejemplo: data.answer, data.message, etc.)
-    return data.answer || data.message || JSON.stringify(data);
+    try {
+      if (typeof data === "string") data = JSON.parse(data);
+    } catch (_) {}
+
+    return (
+      data.output ||
+      data.message ||
+      data.answer ||
+      data.text ||
+      data.reply ||
+      data.response ||
+      Object.values(data)[0] ||
+      "No pude procesar la respuesta."
+    );
   }
 
-  function open() {
-    if (!container) return;
-    chatWindow.style.display = "flex";
-    isOpen = true;
+  function toggle() { isOpen ? close() : open(); }
+  function open() { chatWindow.style.display = "flex"; isOpen = true; }
+  function close() { chatWindow.style.display = "none"; isOpen = false; }
+
+  function handleSend() {
+    if (isSending) return;
+
+    const value = inputField.value.trim();
+    if (!value) return;
+
+    addUserMessage(value);
+    inputField.value = "";
+    setSendingState(true);
+
+    sendMessageToBackend(value)
+      .then((txt) => addBotMessage(txt))
+      .catch(() => addBotMessage("Error al conectar con el asistente."))
+      .finally(() => setSendingState(false));
   }
 
-  function close() {
-    if (!container) return;
-    chatWindow.style.display = "none";
-    isOpen = false;
-  }
-
-  function toggle() {
-    if (isOpen) close();
-    else open();
-  }
-
-  // Exponer API global
-  window.ChatbotWidget = {
-    open,
-    close,
-    toggle,
-  };
-
-  // Inicializar cuando el DOM esté listo
   function init() {
     injectStyles();
     createWidget();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  document.readyState === "loading"
+    ? document.addEventListener("DOMContentLoaded", init)
+    : init();
 })();
