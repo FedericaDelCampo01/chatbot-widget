@@ -368,15 +368,51 @@ async function sendMessageToBackend(message) {
     body: JSON.stringify(payload),
   });
 
-  // 1) Leer SIEMPRE como texto
   const raw = await res.text();
-
-  // 2) Loguear TODO en consola del navegador
   console.log("[CHATBOT RAW RESPONSE]", raw);
 
-  // 3) Devolverlo tal cual (sin parsear nada)
-  return raw || "Respuesta vacía del servidor.";
+  // Intentamos parsear JSON seguro
+  let cleaned = raw;
+
+  try {
+    // Muchas respuestas vienen como: `[ { "output": "texto..." } ]`
+    const parsed = JSON.parse(raw);
+
+    // Caso 1: respuesta en array
+    if (Array.isArray(parsed) && parsed[0]?.output) {
+      return parsed[0].output;
+    }
+
+    // Caso 2: objeto con output directo
+    if (parsed.output) {
+      return parsed.output;
+    }
+
+    // Caso 3: buscar output profundamente
+    const deepOutput = findDeepOutput(parsed);
+    if (deepOutput) return deepOutput;
+
+  } catch (e) {
+    console.warn("No se pudo parsear JSON, devolviendo texto crudo...");
+  }
+
+  // Fallback final
+  return cleaned;
 }
+
+// búsqueda recursiva del campo output
+function findDeepOutput(obj) {
+  if (!obj || typeof obj !== "object") return null;
+
+  for (const key of Object.keys(obj)) {
+    if (key.toLowerCase() === "output") return obj[key];
+    const child = findDeepOutput(obj[key]);
+    if (child) return child;
+  }
+
+  return null;
+}
+
 
 
 
