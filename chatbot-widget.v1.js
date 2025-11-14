@@ -355,26 +355,48 @@
       site_id: CONFIG.siteId,
       message,
       page_url: window.location.href,
+      welcome_message: welcomeMessage,
       timestamp: Date.now(),
     };
 
     const res = await fetch(CONFIG.backendUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Chatbot-Widget": "v1",
+      },
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json().catch(() => ({}));
-
-      // Toda respuesta viene de n8n y siempre es un array
-    if (Array.isArray(data) && data.length > 0) {
-      return data[0].output || "Sin respuesta válida del backend.";
+    if (!res.ok) {
+      throw new Error("HTTP Error " + res.status);
     }
 
-    // Si por alguna razón no vino array, fallback
-    return data.output || data.message || "Sin respuesta.";
+    let data = await res.json().catch(() => ({}));
 
+    // Caso: n8n devuelve un string JSON (✔ muy común)
+    try {
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+    } catch (_) {}
+
+    // Caso: n8n devuelve un array con un objeto (✔ tu caso real)
+    if (Array.isArray(data) && data.length > 0) {
+      if (data[0].output) return data[0].output;
+      if (data[0].message) return data[0].message;
+      if (data[0].answer) return data[0].answer;
+    }
+
+    // Caso: n8n devuelve un objeto directo (✔ a veces pasa)
+    if (data.output) return data.output;
+    if (data.message) return data.message;
+    if (data.answer) return data.answer;
+
+    // Último fallback: por si algo viene raro
+    return "No pude procesar la respuesta del asistente.";
   }
+
 
   function init() {
     injectStyles();
