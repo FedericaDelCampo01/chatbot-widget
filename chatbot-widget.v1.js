@@ -50,16 +50,16 @@
     const style = document.createElement("style");
     style.setAttribute("data-chatbot-widget", "true");
     style.textContent = `
-      .cbw-container {
+     .cbw-container {
         position: fixed;
         z-index: 999999;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
       /* 💬 BURBUJA */
       .cbw-bubble {
-        width: 56px;
-        height: 56px;
+        width: 58px;
+        height: 58px;
         border-radius: 9999px;
         background: var(--chat-accent);
         color: var(--chat-accent-foreground);
@@ -73,15 +73,15 @@
       }
 
       .cbw-bubble-icon {
-        font-size: 26px;
+        font-size: 28px;
       }
 
-      /* 🪟 VENTANA DEL CHAT — ahora se abre hacia la IZQUIERDA */
+      /* 🪟 VENTANA DEL CHAT — abre hacia la IZQUIERDA */
       .cbw-window {
         position: absolute;
-        bottom: 76px;
-        width: 360px;
-        max-height: 520px;
+        bottom: 78px;
+        width: 380px;
+        max-height: 540px;
         max-width: calc(100vw - 60px);
 
         background: var(--chat-bg);
@@ -93,13 +93,13 @@
         overflow: hidden;
         border: 1px solid rgba(148, 163, 184, 0.35);
 
-        right: 0;   /* <<--- ESTA LÍNEA HACE QUE SE ABRA HACIA LA IZQUIERDA */
+        right: 0;
         left: auto;
       }
 
       /* HEADER */
       .cbw-header {
-        padding: 12px 16px;
+        padding: 12px 18px;
         background: linear-gradient(135deg, var(--chat-accent), #059669);
         color: var(--chat-accent-foreground);
         display: flex;
@@ -107,20 +107,22 @@
         justify-content: space-between;
       }
 
+      /* 💚 TÍTULO – más grande */
       .cbw-header-title {
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 600;
+        letter-spacing: -0.3px;
       }
 
+      /* 🗑 Sacamos subtítulo */
       .cbw-header-subtitle {
-        font-size: 11px;
-        opacity: 0.9;
+        display: none !important;
       }
 
       .cbw-header-left {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 0px;
       }
 
       .cbw-header-close {
@@ -128,38 +130,38 @@
         border: none;
         color: inherit;
         cursor: pointer;
-        font-size: 22px;
+        font-size: 24px;
         padding: 4px;
       }
 
-      /* 🌤 MENSAJES con fondo nube */
+      /* 🌤 MENSAJES */
       .cbw-messages {
-        padding: 12px 14px;
+        padding: 14px 16px;
         flex: 1;
         overflow-y: auto;
         background: radial-gradient(circle at top, #f4f4f5, #e5e7eb);
       }
 
-      /* 💬 Estilo general de burbuja */
+      /* 💬 BURBUJA GENÉRICA */
       .cbw-message {
         max-width: 85%;
-        margin-bottom: 8px;
-        padding: 10px 12px;
+        margin-bottom: 10px;
+        padding: 12px 14px;
         border-radius: 14px;
-        font-size: 14px;
-        line-height: 1.45;
+        font-size: 15px; /* Aumentamos font */
+        line-height: 1.55;
         white-space: pre-wrap;
       }
 
-      /* 🟢 Mensaje del USUARIO */
+      /* 🧑‍🦰 USUARIO */
       .cbw-message-user {
         margin-left: auto;
         background: var(--chat-accent);
         color: var(--chat-accent-foreground);
-        border-bottom-right-radius: 2px;
+        border-bottom-right-radius: 4px;
       }
 
-      /* ⚪ Mensaje del BOT – estilo “bubble” */
+      /* 🤖 BOT – modo bubble */
       .cbw-message-bot {
         margin-right: auto;
         background: #ffffff;
@@ -171,14 +173,14 @@
 
       /* FOOTER */
       .cbw-footer {
-        padding: 10px;
+        padding: 12px;
         background: #fafafa;
         border-top: 1px solid #e5e7eb;
       }
 
       .cbw-input-wrapper {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         align-items: flex-end;
       }
 
@@ -187,10 +189,10 @@
         flex: 1;
         border-radius: 9999px;
         border: 1px solid #d1d5db;
-        padding: 10px 14px;
-        font-size: var(--chat-input-font-size);
+        padding: 12px 16px;
+        font-size: 15px; /* Más grande */
         resize: none;
-        max-height: 80px;
+        max-height: 90px;
         outline: none;
       }
 
@@ -199,19 +201,20 @@
         box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4);
       }
 
-      /* 📤 BOTÓN DE ENVIAR */
+      /* 📤 BOTÓN DE ENVIAR — solo icono */
       .cbw-send-btn {
         border-radius: 9999px;
         border: none;
         background: var(--chat-accent);
         color: var(--chat-accent-foreground);
-        padding: 8px 12px;
+        padding: 12px 14px; /* Más grande + redondo */
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
-        min-width: 40px;
+        font-size: 18px; /* Ícono grande */
+        min-width: 48px;
+        height: 48px;
       }
 
       .cbw-send-btn:disabled {
@@ -220,10 +223,11 @@
       }
 
       .cbw-send-icon {
-        margin-left: 4px;
+        margin-left: 0px !important;
+        font-size: 20px;
       }
 
-      /* ⚡ Powered by */
+      /* ⚡ Powered */
       .cbw-powered {
         margin-top: 4px;
         font-size: 10px;
@@ -248,7 +252,6 @@
         left: 20px;
         top: 20px;
       }
-
     `;
     document.head.appendChild(style);
   }
