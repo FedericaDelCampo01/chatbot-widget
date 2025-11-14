@@ -351,51 +351,72 @@
   }
 
   async function sendMessageToBackend(message) {
-    const payload = {
-      site_id: CONFIG.siteId,
-      message,
-      page_url: window.location.href,
-      welcome_message: welcomeMessage,
-      timestamp: Date.now(),
-    };
+  const payload = {
+    site_id: CONFIG.siteId,
+    message,
+    page_url: window.location.href,
+    welcome_message: welcomeMessage,
+    timestamp: Date.now(),
+  };
 
-    const res = await fetch(CONFIG.backendUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Chatbot-Widget": "v1",
-      },
-      body: JSON.stringify(payload),
-    });
+  const res = await fetch(CONFIG.backendUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Chatbot-Widget": "v1",
+    },
+    body: JSON.stringify(payload),
+  });
 
-    if (!res.ok) {
-      throw new Error("HTTP Error " + res.status);
-    }
-
-    let data = await res.json().catch(() => ({}));
-
-    // Caso: n8n devuelve un string JSON (✔ muy común)
-    try {
-      if (typeof data === "string") {
-        data = JSON.parse(data);
-      }
-    } catch (_) {}
-
-    // Caso: n8n devuelve un array con un objeto (✔ tu caso real)
-    if (Array.isArray(data) && data.length > 0) {
-      if (data[0].output) return data[0].output;
-      if (data[0].message) return data[0].message;
-      if (data[0].answer) return data[0].answer;
-    }
-
-    // Caso: n8n devuelve un objeto directo (✔ a veces pasa)
-    if (data.output) return data.output;
-    if (data.message) return data.message;
-    if (data.answer) return data.answer;
-
-    // Último fallback: por si algo viene raro
-    return "No pude procesar la respuesta del asistente.";
+  if (!res.ok) {
+    throw new Error("HTTP Error " + res.status);
   }
+
+  // 1) leer SIEMPRE como texto
+  const raw = await res.text();
+
+  // 2) si no hay nada, devolvemos error amable
+  if (!raw) {
+    return "No recibí respuesta del asistente.";
+  }
+
+  let data = null;
+
+  // 3) intentar parsear a JSON
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    // No es JSON → probablemente texto plano: lo devolvemos tal cual
+    return raw;
+  }
+
+  // 4) Si es un array tipo n8n: [ { output: "..." } ]
+  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "object") {
+    const item = data[0];
+    return (
+      item.output ||
+      item.message ||
+      item.answer ||
+      item.text ||
+      raw
+    );
+  }
+
+  // 5) Si es un objeto directo: { output: "..." }
+  if (data && typeof data === "object") {
+    return (
+      data.output ||
+      data.message ||
+      data.answer ||
+      data.text ||
+      raw
+    );
+  }
+
+  // 6) Si es cualquier otra cosa, devolvemos el texto original
+  return raw;
+}
+
 
 
   function init() {
