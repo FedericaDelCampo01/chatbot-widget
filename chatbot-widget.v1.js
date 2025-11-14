@@ -1,11 +1,14 @@
 (function () {
+  // Evitar doble carga
   if (window.__CHATBOT_WIDGET_LOADED__) return;
   window.__CHATBOT_WIDGET_LOADED__ = true;
 
   const CONFIG = window.__CHATBOT_WIDGET_CONFIG || {};
 
   if (!CONFIG.backendUrl || !CONFIG.siteId) {
-    console.warn("[Chatbot Widget] Falta backendUrl o siteId en window.__CHATBOT_WIDGET_CONFIG");
+    console.warn(
+      "[Chatbot Widget] Falta backendUrl o siteId en window.__CHATBOT_WIDGET_CONFIG"
+    );
     return;
   }
 
@@ -14,6 +17,7 @@
     CONFIG.welcomeMessage || "¡Hola! ¿En qué puedo ayudarte hoy?";
   const theme = CONFIG.theme || {};
 
+  // Estado interno
   let isOpen = false;
   let container;
   let bubbleButton;
@@ -23,22 +27,25 @@
   let sendButton;
   let isSending = false;
 
+  // Aplicar tema + variables por defecto
   function applyTheme(root) {
     const vars = {
       "--chat-accent": "#10b981",
       "--chat-accent-foreground": "#ffffff",
       "--chat-bg": "#ffffff",
       "--chat-foreground": "#0f172a",
-      "--chat-radius": "16px",
-      "--chat-input-font-size": "15px",
+      "--chat-radius": "14px",
+      "--chat-input-font-size": "17px",
       ...theme,
     };
 
-    Object.entries(vars).forEach(([k, v]) => {
-      root.style.setProperty(k, v);
+    Object.entries(vars).forEach(([key, value]) => {
+      if (!value) return;
+      root.style.setProperty(key, value);
     });
   }
 
+  // Inyectar CSS del widget
   function injectStyles() {
     const style = document.createElement("style");
     style.setAttribute("data-chatbot-widget", "true");
@@ -46,12 +53,13 @@
       .cbw-container {
         position: fixed;
         z-index: 999999;
-        font-family: system-ui, sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
+      /* ==== BURBUJA ==== */
       .cbw-bubble {
-        width: 60px;
-        height: 60px;
+        width: 58px;
+        height: 58px;
         border-radius: 9999px;
         background: var(--chat-accent);
         color: var(--chat-accent-foreground);
@@ -61,36 +69,33 @@
         cursor: pointer;
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
         border: none;
+        outline: none;
       }
 
       .cbw-bubble-icon {
-        font-size: 30px;
+        font-size: 28px;
       }
 
+      /* ==== VENTANA ==== */
       .cbw-window {
         position: absolute;
         bottom: 80px;
-        width: 350px;
+        right: 0; /* abrir hacia la izquierda */
+        width: 340px;
         max-height: 520px;
         background: var(--chat-bg);
         color: var(--chat-foreground);
-        border-radius: 20px;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+        border-radius: 18px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        animation: cbw-pop 0.2s ease-out;
-      }
-
-      @keyframes cbw-pop {
-        from { opacity:0; transform:scale(0.9) }
-        to { opacity:1; transform:scale(1) }
+        border: 1px solid rgba(148, 163, 184, 0.20);
       }
 
       .cbw-header {
         padding: 12px 16px;
-        background: var(--chat-accent);
+        background: linear-gradient(135deg, var(--chat-accent), #0ca678);
         color: var(--chat-accent-foreground);
         display: flex;
         align-items: center;
@@ -98,42 +103,46 @@
       }
 
       .cbw-header-title {
-        font-size: 15px;
-        font-weight: 600;
+        font-size: 16px;
+        font-weight: 700;
       }
 
       .cbw-header-close {
         background: transparent;
         border: none;
-        color: white;
-        font-size: 22px;
+        color: inherit;
         cursor: pointer;
+        font-size: 22px;
+        padding: 4px;
       }
 
+      /* ==== MENSAJES ==== */
       .cbw-messages {
-        padding: 14px;
+        padding: 12px 14px;
         flex: 1;
         overflow-y: auto;
-        background: radial-gradient(circle at top, #f4f4f5, #e5e7eb);
+        background: radial-gradient(circle at top, #f7f7f7, #ececec);
       }
 
       .cbw-message {
         max-width: 85%;
-        padding: 10px 14px;
         margin-bottom: 10px;
-        border-radius: 18px;
-        font-size: 14px;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 16px;
         line-height: 1.45;
         white-space: pre-wrap;
       }
 
+      /* Usuario */
       .cbw-message-user {
         margin-left: auto;
         background: var(--chat-accent);
-        color: white;
+        color: var(--chat-accent-foreground);
         border-bottom-right-radius: 4px;
       }
 
+      /* Bot estilo BURBUJA */
       .cbw-message-bot {
         margin-right: auto;
         background: white;
@@ -142,6 +151,7 @@
         border-bottom-left-radius: 4px;
       }
 
+      /* ==== FOOTER ==== */
       .cbw-footer {
         padding: 10px;
         background: #fafafa;
@@ -156,65 +166,98 @@
 
       .cbw-input {
         flex: 1;
-        border-radius: 20px;
+        border-radius: 9999px;
         border: 1px solid #d1d5db;
         padding: 10px 14px;
         font-size: var(--chat-input-font-size);
+        resize: none;
+        max-height: 80px;
+        outline: none;
+      }
+
+      .cbw-input:focus {
+        border-color: var(--chat-accent);
+        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4);
       }
 
       .cbw-send-btn {
-        border-radius: 50%;
-        width: 44px;
-        height: 44px;
-        background: var(--chat-accent);
-        color: white;
+        border-radius: 9999px;
         border: none;
+        background: var(--chat-accent);
+        color: var(--chat-accent-foreground);
+        padding: 10px 14px;
         cursor: pointer;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size: 18px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        height: 48px;
       }
 
-      .cbw-pos-bottom-right { right: 20px; bottom: 20px; }
-      .cbw-pos-bottom-left { left: 20px; bottom: 20px; }
-      .cbw-pos-top-right { right: 20px; top: 20px; }
-      .cbw-pos-top-left { left: 20px; top: 20px; }
+      .cbw-send-btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
+      /* ==== POSICIONES ==== */
+      .cbw-pos-bottom-right {
+        right: 20px;
+        bottom: 20px;
+      }
+      .cbw-pos-bottom-left {
+        left: 20px;
+        bottom: 20px;
+      }
     `;
     document.head.appendChild(style);
   }
 
   function getPositionClass() {
     switch (position) {
-      case "bottom-left": return "cbw-pos-bottom-left";
-      case "top-right": return "cbw-pos-top-right";
-      case "top-left": return "cbw-pos-top-left";
-      default: return "cbw-pos-bottom-right";
+      case "bottom-left":
+        return "cbw-pos-bottom-left";
+      case "bottom-right":
+      default:
+        return "cbw-pos-bottom-right";
     }
   }
 
+  // Crear widget
   function createWidget() {
     container = document.createElement("div");
     container.className = `cbw-container ${getPositionClass()}`;
 
+    // Burbuja
     bubbleButton = document.createElement("button");
     bubbleButton.className = "cbw-bubble";
     bubbleButton.innerHTML = `<div class="cbw-bubble-icon">💬</div>`;
 
+    // Ventana
     chatWindow = document.createElement("div");
     chatWindow.className = "cbw-window";
     chatWindow.style.display = "none";
 
+    // Header
     const header = document.createElement("div");
     header.className = "cbw-header";
-    header.innerHTML = `
-      <div class="cbw-header-title">Asistente virtual</div>
-      <button class="cbw-header-close">&times;</button>
-    `;
 
+    const title = document.createElement("div");
+    title.className = "cbw-header-title";
+    title.textContent = "Asistente virtual";
+
+    const close = document.createElement("button");
+    close.className = "cbw-header-close";
+    close.innerHTML = "&times;";
+
+    header.appendChild(title);
+    header.appendChild(close);
+
+    // Mensajes
     messagesContainer = document.createElement("div");
     messagesContainer.className = "cbw-messages";
 
+    // Footer
     const footer = document.createElement("div");
     footer.className = "cbw-footer";
 
@@ -223,21 +266,24 @@
 
     inputField = document.createElement("textarea");
     inputField.className = "cbw-input";
-    inputField.rows = 1;
     inputField.placeholder = "Escribe tu mensaje...";
+    inputField.rows = 1;
 
     sendButton = document.createElement("button");
     sendButton.className = "cbw-send-btn";
-    sendButton.innerHTML = "➤";
+    sendButton.innerHTML = `➤`;
 
     wrapper.appendChild(inputField);
     wrapper.appendChild(sendButton);
+
     footer.appendChild(wrapper);
 
+    // Armar ventana
     chatWindow.appendChild(header);
     chatWindow.appendChild(messagesContainer);
     chatWindow.appendChild(footer);
 
+    // Agregar todo
     container.appendChild(chatWindow);
     container.appendChild(bubbleButton);
 
@@ -245,11 +291,12 @@
 
     applyTheme(container);
 
-    bubbleButton.onclick = toggle;
-    header.querySelector(".cbw-header-close").onclick = close;
-    sendButton.onclick = handleSend;
+    // Eventos
+    bubbleButton.addEventListener("click", toggle);
+    close.addEventListener("click", toggle);
+    sendButton.addEventListener("click", handleSend);
 
-    inputField.addEventListener("keydown", (e) => {
+    inputField.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -260,20 +307,47 @@
   }
 
   function addMessage(text, from) {
-    const div = document.createElement("div");
-    div.className =
+    const el = document.createElement("div");
+    el.className =
       "cbw-message " + (from === "user" ? "cbw-message-user" : "cbw-message-bot");
-    div.textContent = text;
-    messagesContainer.appendChild(div);
+    el.textContent = text;
+    messagesContainer.appendChild(el);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  function addUserMessage(t) { addMessage(t, "user"); }
-  function addBotMessage(t) { addMessage(t, "bot"); }
+  function addUserMessage(t) {
+    addMessage(t, "user");
+  }
 
-  function setSendingState(s) {
+  function addBotMessage(t) {
+    addMessage(t, "bot");
+  }
+
+  // Estado de envío
+  function setSending(s) {
     isSending = s;
     sendButton.disabled = s;
+  }
+
+  function toggle() {
+    isOpen = !isOpen;
+    chatWindow.style.display = isOpen ? "flex" : "none";
+  }
+
+  // Enviar al backend
+  function handleSend() {
+    if (isSending) return;
+    const value = inputField.value.trim();
+    if (!value) return;
+
+    addUserMessage(value);
+    inputField.value = "";
+    setSending(true);
+
+    sendMessageToBackend(value)
+      .then((txt) => addBotMessage(txt || "No pude procesar tu mensaje."))
+      .catch(() => addBotMessage("Error al conectar con el servidor."))
+      .finally(() => setSending(false));
   }
 
   async function sendMessageToBackend(message) {
@@ -281,7 +355,6 @@
       site_id: CONFIG.siteId,
       message,
       page_url: window.location.href,
-      welcome_message: welcomeMessage,
       timestamp: Date.now(),
     };
 
@@ -291,42 +364,15 @@
       body: JSON.stringify(payload),
     });
 
-    let data = await res.json().catch(() => ({}));
-
-    try {
-      if (typeof data === "string") data = JSON.parse(data);
-    } catch (_) {}
+    const data = await res.json().catch(() => ({}));
 
     return (
+      data.answer ||
       data.output ||
       data.message ||
-      data.answer ||
       data.text ||
-      data.reply ||
-      data.response ||
-      Object.values(data)[0] ||
-      "No pude procesar la respuesta."
+      JSON.stringify(data)
     );
-  }
-
-  function toggle() { isOpen ? close() : open(); }
-  function open() { chatWindow.style.display = "flex"; isOpen = true; }
-  function close() { chatWindow.style.display = "none"; isOpen = false; }
-
-  function handleSend() {
-    if (isSending) return;
-
-    const value = inputField.value.trim();
-    if (!value) return;
-
-    addUserMessage(value);
-    inputField.value = "";
-    setSendingState(true);
-
-    sendMessageToBackend(value)
-      .then((txt) => addBotMessage(txt))
-      .catch(() => addBotMessage("Error al conectar con el asistente."))
-      .finally(() => setSendingState(false));
   }
 
   function init() {
@@ -334,7 +380,9 @@
     createWidget();
   }
 
-  document.readyState === "loading"
-    ? document.addEventListener("DOMContentLoaded", init)
-    : init();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
