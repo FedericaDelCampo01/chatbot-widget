@@ -331,7 +331,7 @@
 
     sendButton = document.createElement("button");
     sendButton.className = "cbw-send-btn";
-    sendButton.innerHTML = `<span>Enviar</span><span class="cbw-send-icon">➤</span>`;
+    sendButton.innerHTML = `<span class="cbw-send-icon">➤</span>`;
 
     inputWrapper.appendChild(inputField);
     inputWrapper.appendChild(sendButton);
