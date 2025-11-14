@@ -350,7 +350,7 @@
       .finally(() => setSending(false));
   }
 
-  async function sendMessageToBackend(message) {
+async function sendMessageToBackend(message) {
   const payload = {
     site_id: CONFIG.siteId,
     message,
@@ -368,54 +368,16 @@
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    throw new Error("HTTP Error " + res.status);
-  }
-
-  // 1) leer SIEMPRE como texto
+  // 1) Leer SIEMPRE como texto
   const raw = await res.text();
 
-  // 2) si no hay nada, devolvemos error amable
-  if (!raw) {
-    return "No recibí respuesta del asistente.";
-  }
+  // 2) Loguear TODO en consola del navegador
+  console.log("[CHATBOT RAW RESPONSE]", raw);
 
-  let data = null;
-
-  // 3) intentar parsear a JSON
-  try {
-    data = JSON.parse(raw);
-  } catch (e) {
-    // No es JSON → probablemente texto plano: lo devolvemos tal cual
-    return raw;
-  }
-
-  // 4) Si es un array tipo n8n: [ { output: "..." } ]
-  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "object") {
-    const item = data[0];
-    return (
-      item.output ||
-      item.message ||
-      item.answer ||
-      item.text ||
-      raw
-    );
-  }
-
-  // 5) Si es un objeto directo: { output: "..." }
-  if (data && typeof data === "object") {
-    return (
-      data.output ||
-      data.message ||
-      data.answer ||
-      data.text ||
-      raw
-    );
-  }
-
-  // 6) Si es cualquier otra cosa, devolvemos el texto original
-  return raw;
+  // 3) Devolverlo tal cual (sin parsear nada)
+  return raw || "Respuesta vacía del servidor.";
 }
+
 
 
 
